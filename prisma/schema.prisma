@@ -1,0 +1,234 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model District {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  blocks  Block[]
+  schools School[]
+}
+
+model Block {
+  id         Int      @id @default(autoincrement())
+  name       String
+  districtId Int
+  district   District @relation(fields: [districtId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  schools School[]
+
+  @@unique([name, districtId])
+  @@index([districtId])
+}
+
+model School {
+  id         Int      @id @default(autoincrement())
+  name       String
+  code       String   @unique
+  districtId Int
+  blockId    Int
+  district   District @relation(fields: [districtId], references: [id])
+  block      Block    @relation(fields: [blockId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  metrics SchoolMetric[]
+
+  @@index([districtId])
+  @@index([blockId])
+}
+
+model SchoolMetric {
+  id                      Int      @id @default(autoincrement())
+  schoolId                Int
+  reportingMonth          String
+  grade                   String
+  subject                 String
+  pblConducted            Boolean
+  evidenceSubmitted       Boolean
+  enrollmentClass6        Int      @default(0)
+  attendanceClass6Science  Int     @default(0)
+  attendanceClass6Math    Int      @default(0)
+  enrollmentClass7        Int      @default(0)
+  attendanceClass7Science  Int     @default(0)
+  attendanceClass7Math    Int      @default(0)
+  enrollmentClass8        Int      @default(0)
+  attendanceClass8Science  Int     @default(0)
+  attendanceClass8Math    Int      @default(0)
+  totalEnrollment         Int      @default(0)
+  totalAttendance         Int      @default(0)
+  attendanceRate          Float    @default(0)
+  riskStatus              String   @default("")
+
+  school School @relation(fields: [schoolId], references: [id])
+
+  @@unique([schoolId, reportingMonth, grade, subject])
+  @@index([reportingMonth])
+  @@index([schoolId])
+}
+
+model Grant {
+  id               String   @id
+  donor            String
+  name             String
+  periodStart      String
+  periodEnd        String
+  coveredDistricts String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  finance     GrantFinance[]
+  performance GrantPerformance[]
+  evidence    EvidenceAsset[]
+}
+
+model GrantFinance {
+  id                        Int      @id @default(autoincrement())
+  grantId                   String
+  reportingMonth            String
+  budgetLine                String
+  approvedBudget            Float
+  monthlyUtilized           Float
+  cumulativeUtilized        Float
+  cumulativeUtilizationRate Float
+  financeNote               String   @default("")
+
+  grant Grant @relation(fields: [grantId], references: [id])
+
+  @@unique([grantId, reportingMonth, budgetLine])
+  @@index([grantId])
+  @@index([reportingMonth])
+}
+
+model GrantPerformance {
+  id                    Int      @id @default(autoincrement())
+  grantId               String
+  reportingMonth        String
+  periodEndDate         String
+  reportDueDate         String
+  reportStatus          String
+  coveredDistricts      String
+  sampledSchoolRecords  Int
+  schoolsCompletedPbl   Int
+  pblCompletionRate     Float
+  schoolsWithEvidence   Int
+  evidenceSubmissionRate Float
+  totalEnrollment       Int
+  totalAttendance       Int
+  attendanceRate        Float
+  riskStatus            String
+  milestoneSummary      String   @default("")
+  draftReportText       String   @default("")
+
+  grant Grant @relation(fields: [grantId], references: [id])
+
+  @@unique([grantId, reportingMonth])
+  @@index([grantId])
+  @@index([reportingMonth])
+}
+
+model EvidenceAsset {
+  id             String   @id
+  recordType     String
+  grantId        String
+  donor          String
+  reportingMonth String
+  district       String
+  title          String
+  summary        String   @default("")
+  fileName       String   @default("")
+  relativePath   String   @default("")
+  usageNote      String   @default("")
+  createdAt      DateTime @default(now())
+
+  grant Grant @relation(fields: [grantId], references: [id])
+
+  @@index([grantId])
+  @@index([recordType])
+  @@index([reportingMonth])
+}
+
+model RiskAssessment {
+  id             Int      @id @default(autoincrement())
+  level          String
+  levelId        String
+  levelName      String
+  reportingMonth String
+  riskScore      Float
+  riskLevel      String
+  riskReason     String   @default("")
+  metricType     String   @default("overall")
+  createdAt      DateTime @default(now())
+
+  @@index([level, levelId, reportingMonth])
+  @@index([reportingMonth])
+  @@index([riskLevel])
+}
+
+model ReviewSummary {
+  id               Int      @id @default(autoincrement())
+  reportingMonth   String
+  districtFilter   String?
+  blockFilter      String?
+  executiveSummary String   @default("")
+  achievements     String   @default("[]")
+  gaps             String   @default("[]")
+  priorityDistricts String  @default("[]")
+  priorityBlocks   String   @default("[]")
+  discussionPoints String   @default("[]")
+  createdAt        DateTime @default(now())
+
+  @@index([reportingMonth])
+}
+
+model RecommendedAction {
+  id             Int      @id @default(autoincrement())
+  reportingMonth String
+  districtFilter String?
+  blockFilter    String?
+  title          String
+  description    String   @default("")
+  owner          String   @default("")
+  priority       String   @default("Medium")
+  dueDate        String   @default("")
+  status         String   @default("Pending")
+  linkedMetric   String   @default("")
+  riskLevel      String   @default("")
+  createdAt      DateTime @default(now())
+
+  @@index([reportingMonth])
+  @@index([priority])
+}
+
+model GeneratedReport {
+  id             Int      @id @default(autoincrement())
+  reportType     String
+  grantId        String?
+  reportingMonth String
+  format         String
+  content        String   @default("")
+  createdAt      DateTime @default(now())
+
+  @@index([reportType, grantId, reportingMonth])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  action     String
+  entityType String
+  entityId   String
+  details    String   @default("{}")
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+}
