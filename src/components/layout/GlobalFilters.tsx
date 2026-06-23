@@ -1,23 +1,39 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, X, Filter } from "lucide-react";
 import { useFilterStore } from "@/store/filters";
-import type { FilterOptions } from "@/types";
+import { SearchableCombobox } from "@/components/ui/SearchableCombobox";
+import type { FilterOptions, BlockOption } from "@/types";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const MONTH_LABELS: Record<string, string> = {
-  "2025-07": "July 2025",
-  "2025-08": "August 2025",
-  "2025-09": "September 2025",
+  "July_2025": "July 2025",
+  "August_2025": "August 2025",
+  "September_2025": "September 2025",
 };
+
+const monthOptions = (months: string[]) =>
+  months.map((m) => ({ value: m, label: MONTH_LABELS[m] || m }));
+
+const districtOptions = (districts: string[]) =>
+  districts.map((d) => ({ value: d, label: d }));
+
+const blockOptions = (blocks: BlockOption[], currentDistrict: string) => {
+  const filtered = currentDistrict
+    ? blocks.filter((b) => b.districtName === currentDistrict)
+    : blocks;
+  return filtered.map((b) => ({ value: b.name, label: b.name }));
+};
+
+const simpleOptions = (items: string[]) =>
+  items.map((i) => ({ value: i, label: i }));
 
 const activeFilters = (filters: Record<string, string | undefined>) =>
   Object.entries(filters).filter(([, v]) => v && v !== "all") as [string, string][];
@@ -28,143 +44,103 @@ export function GlobalFilters() {
   const filters = useFilterStore();
 
   useEffect(() => {
-    fetch("/api/filters")
-      .then((r) => r.json())
-      .then(setOptions)
-      .catch(() => {});
-  }, []);
+    const load = async () => {
+      const blockParams = filters.district
+        ? `?district=${encodeURIComponent(filters.district)}`
+        : "";
+      const res = await fetch(`/api/filters${blockParams}`);
+      setOptions(await res.json());
+    };
+    load();
+  }, [filters.district]);
 
   const active = useMemo(
-    () => activeFilters({
-      Month: filters.month,
-      District: filters.district,
-      Block: filters.block,
-      Grade: filters.grade,
-      Subject: filters.subject,
-    }),
+    () =>
+      activeFilters({
+        Month: filters.month,
+        District: filters.district,
+        Block: filters.block,
+        Grade: filters.grade,
+        Subject: filters.subject,
+      }),
     [filters.month, filters.district, filters.block, filters.grade, filters.subject]
   );
 
-  return (
-    <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40">
-      <div className="px-4 py-2">
-        <div className="hidden md:flex items-center gap-1.5 flex-wrap">
-          <Select
-            value={filters.month}
-            onValueChange={(v) => v && filters.setMonth(v)}
-          >
-            <SelectTrigger className="w-[130px] h-7 text-[11px]" aria-label="Select month">
-              <SelectValue placeholder="All Months" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[260px] min-w-[140px]">
-              <SelectItem value="all">All Months</SelectItem>
-              {options?.months.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {MONTH_LABELS[m] || m}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+  const clearFilter = (key: string) => {
+    if (key === "Month") filters.setMonth("");
+    else if (key === "District") { filters.setDistrict(""); filters.setBlock(""); }
+    else if (key === "Block") filters.setBlock("");
+    else if (key === "Grade") filters.setGrade("");
+    else if (key === "Subject") filters.setSubject("");
+  };
 
-          <span className="text-slate-300 text-[11px]">|</span>
-
-          <Select
-            value={filters.district}
-            onValueChange={(v) => v && filters.setDistrict(v)}
-          >
-            <SelectTrigger className="w-[140px] h-7 text-[11px]" aria-label="Select district">
-              <SelectValue placeholder="All Districts" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[260px] min-w-[160px]">
-              <SelectItem value="all">All Districts</SelectItem>
-              {options?.districts.map((d) => (
-                <SelectItem key={d} value={d}>{d}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={filters.block}
-            onValueChange={(v) => v && filters.setBlock(v)}
-          >
-            <SelectTrigger className="w-[160px] h-7 text-[11px]" aria-label="Select block">
-              <SelectValue placeholder="All Blocks" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[260px] min-w-[180px]">
-              <SelectItem value="all">All Blocks</SelectItem>
-              {options?.blocks.map((b) => (
-                <SelectItem key={b} value={b}>{b}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={filters.grade}
-            onValueChange={(v) => v && filters.setGrade(v)}
-          >
-            <SelectTrigger className="w-[110px] h-7 text-[11px]" aria-label="Select grade">
-              <SelectValue placeholder="All Grades" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[260px] min-w-[120px]">
-              <SelectItem value="all">All Grades</SelectItem>
-              {options?.grades.map((g) => (
-                <SelectItem key={g} value={g}>{g}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={filters.subject}
-            onValueChange={(v) => v && filters.setSubject(v)}
-          >
-            <SelectTrigger className="w-[120px] h-7 text-[11px]" aria-label="Select subject">
-              <SelectValue placeholder="All Subjects" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[260px] min-w-[130px]">
-              <SelectItem value="all">All Subjects</SelectItem>
-              {options?.subjects.map((s) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={filters.resetFilters}
-            title="Reset Filters"
-            className="h-7 w-7 ml-1 text-slate-400 hover:text-slate-600"
-          >
-            <RotateCcw className="h-3 w-3" />
-          </Button>
-        </div>
-
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden flex items-center gap-2 text-sm text-slate-600"
+  const filterContent = (
+    <div className="flex flex-col gap-2 min-w-0">
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <SearchableCombobox
+          value={filters.month || "all"}
+          onValueChange={(v) => filters.setMonth(v === "all" ? "" : v)}
+          options={[{ value: "all", label: "All Months" }, ...(options ? monthOptions(options.months) : [])]}
+          placeholder="All Months"
+          searchPlaceholder="Search month..."
+          className="w-[135px]"
+        />
+        <span className="text-slate-300 dark:text-slate-600 text-[11px] shrink-0">|</span>
+        <SearchableCombobox
+          value={filters.district || "all"}
+          onValueChange={(v) => filters.setDistrict(v === "all" ? "" : v)}
+          options={[{ value: "all", label: "All Districts" }, ...(options ? districtOptions(options.districts) : [])]}
+          placeholder="All Districts"
+          searchPlaceholder="Search district..."
+          className="w-[145px]"
+        />
+        <SearchableCombobox
+          value={filters.block || "all"}
+          onValueChange={(v) => filters.setBlock(v === "all" ? "" : v)}
+          options={[{ value: "all", label: "All Blocks" }, ...(options ? blockOptions(options.blocks, filters.district || "") : [])]}
+          placeholder="All Blocks"
+          searchPlaceholder="Search block..."
+          className="w-[155px]"
+        />
+        <span className="text-slate-300 dark:text-slate-600 text-[11px] shrink-0">|</span>
+        <SearchableCombobox
+          value={filters.grade || "all"}
+          onValueChange={(v) => filters.setGrade(v === "all" ? "" : v)}
+          options={[{ value: "all", label: "All Grades" }, ...(options ? simpleOptions(options.grades) : [])]}
+          placeholder="All Grades"
+          searchPlaceholder="Search grade..."
+          className="w-[115px]"
+        />
+        <SearchableCombobox
+          value={filters.subject || "all"}
+          onValueChange={(v) => filters.setSubject(v === "all" ? "" : v)}
+          options={[{ value: "all", label: "All Subjects" }, ...(options ? simpleOptions(options.subjects) : [])]}
+          placeholder="All Subjects"
+          searchPlaceholder="Search subject..."
+          className="w-[125px]"
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={filters.resetFilters}
+          title="Reset Filters"
+          className="h-7 w-7 text-slate-400 hover:text-slate-600 shrink-0"
         >
-          <Filter className="h-4 w-4" />
-          <span>Filters{active.length > 0 ? ` (${active.length})` : ""}</span>
-        </button>
+          <RotateCcw className="h-3 w-3" />
+        </Button>
       </div>
 
       {active.length > 0 && (
-        <div className="px-4 pb-2 flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1">
           {active.map(([key, val]) => (
             <span
               key={key}
-              className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-medium border border-emerald-200"
+              className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-medium border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
             >
-              {key}: {val}
+              {key}: {MONTH_LABELS[val] || val}
               <button
-                onClick={() => {
-                  if (key === "Month") filters.setMonth("");
-                  else if (key === "District") filters.setDistrict("");
-                  else if (key === "Block") filters.setBlock("");
-                  else if (key === "Grade") filters.setGrade("");
-                  else if (key === "Subject") filters.setSubject("");
-                }}
-                className="ml-0.5 hover:bg-emerald-200 rounded-full p-0.5"
+                onClick={() => clearFilter(key)}
+                className="ml-0.5 hover:bg-emerald-200 dark:hover:bg-emerald-800 rounded-full p-0.5"
                 aria-label={`Remove ${key} filter`}
               >
                 <X className="h-2.5 w-2.5" />
@@ -173,46 +149,68 @@ export function GlobalFilters() {
           ))}
         </div>
       )}
+    </div>
+  );
 
-      {mobileOpen && (
-        <div className="md:hidden p-4 border-t space-y-2">
-          <MobileFilter
-            label="Month"
-            value={filters.month}
-            options={options?.months || []}
-            labels={MONTH_LABELS}
-            onChange={(v) => filters.setMonth(v)}
-          />
-          <MobileFilter
-            label="District"
-            value={filters.district}
-            options={options?.districts || []}
-            onChange={(v) => filters.setDistrict(v)}
-          />
-          <MobileFilter
-            label="Block"
-            value={filters.block}
-            options={options?.blocks || []}
-            onChange={(v) => filters.setBlock(v)}
-          />
-          <MobileFilter
-            label="Grade"
-            value={filters.grade}
-            options={options?.grades || []}
-            onChange={(v) => filters.setGrade(v)}
-          />
-          <MobileFilter
-            label="Subject"
-            value={filters.subject}
-            options={options?.subjects || []}
-            onChange={(v) => filters.setSubject(v)}
-          />
-          <Button variant="outline" size="sm" onClick={filters.resetFilters} className="w-full">
-            <RotateCcw className="h-3.5 w-3.5 mr-1" />
-            Reset
-          </Button>
+  return (
+    <div className="bg-white dark:bg-slate-900">
+      <div className="px-4 py-2">
+        <div className="hidden md:block">{filterContent}</div>
+        <div className="md:hidden">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+              <Filter className="h-4 w-4" />
+              <span>Filters{active.length > 0 ? ` (${active.length})` : ""}</span>
+            </SheetTrigger>
+            <SheetContent side="bottom" showCloseButton={false}>
+              <SheetTitle className="sr-only">Filters</SheetTitle>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-slate-900">Filters</span>
+                <button onClick={filters.resetFilters} className="text-xs text-emerald-600 font-medium">
+                  Reset all
+                </button>
+              </div>
+              <div className="space-y-3 pb-4">
+                <MobileFilter
+                  label="Month"
+                  value={filters.month || "all"}
+                  onChange={(v) => filters.setMonth(v === "all" ? "" : v)}
+                  options={monthOptions(options?.months || [])}
+                  placeholder="All Months"
+                />
+                <MobileFilter
+                  label="District"
+                  value={filters.district || "all"}
+                  onChange={(v) => filters.setDistrict(v === "all" ? "" : v)}
+                  options={districtOptions(options?.districts || [])}
+                  placeholder="All Districts"
+                />
+                <MobileFilter
+                  label="Block"
+                  value={filters.block || "all"}
+                  onChange={(v) => filters.setBlock(v === "all" ? "" : v)}
+                  options={blockOptions(options?.blocks || [], filters.district || "")}
+                  placeholder="All Blocks"
+                />
+                <MobileFilter
+                  label="Grade"
+                  value={filters.grade || "all"}
+                  onChange={(v) => filters.setGrade(v === "all" ? "" : v)}
+                  options={simpleOptions(options?.grades || [])}
+                  placeholder="All Grades"
+                />
+                <MobileFilter
+                  label="Subject"
+                  value={filters.subject || "all"}
+                  onChange={(v) => filters.setSubject(v === "all" ? "" : v)}
+                  options={simpleOptions(options?.subjects || [])}
+                  placeholder="All Subjects"
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -220,32 +218,28 @@ export function GlobalFilters() {
 function MobileFilter({
   label,
   value,
-  options,
-  labels,
   onChange,
+  options,
+  placeholder,
 }: {
   label: string;
-  value: string | undefined;
-  options: string[];
-  labels?: Record<string, string>;
+  value: string;
   onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
 }) {
   return (
     <div>
-      <label className="text-xs font-medium text-slate-500 mb-1 block">{label}</label>
-      <select
+      <label className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1 block">{label}</label>
+      <SearchableCombobox
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        aria-label={`Select ${label}`}
-      >
-        <option value="">All {label}s</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {labels?.[o] || o}
-          </option>
-        ))}
-      </select>
+        onValueChange={onChange}
+        options={[{ value: "all", label: placeholder }, ...options]}
+        placeholder={placeholder}
+        searchPlaceholder={`Search ${label.toLowerCase()}...`}
+        className="w-full"
+        triggerClassName="h-9 text-sm"
+      />
     </div>
   );
 }

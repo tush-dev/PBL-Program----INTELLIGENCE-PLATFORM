@@ -15,6 +15,7 @@ import {
   BookOpen,
   AlertTriangle,
   Image as ImageIcon,
+  TrendingUp,
 } from "lucide-react";
 import type {
   DashboardMetrics,
@@ -38,11 +39,11 @@ interface DashboardData {
   actions: RecommendedAction[];
 }
 
-const MONTHS = ["2025-07", "2025-08", "2025-09"];
+const MONTHS = ["July_2025", "August_2025", "September_2025"];
 const MONTH_FULL: Record<string, string> = {
-  "2025-07": "July",
-  "2025-08": "August",
-  "2025-09": "September",
+  "July_2025": "July",
+  "August_2025": "August",
+  "September_2025": "September",
 };
 
 export default function OverviewPage() {
@@ -83,12 +84,12 @@ export default function OverviewPage() {
         <ExecutiveSummaryBanner data={null} loading />
         <div className="animate-pulse grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-28 bg-slate-200 rounded-xl" />
+            <div key={i} className="h-28 bg-slate-200 dark:bg-slate-700 rounded-xl" />
           ))}
         </div>
         <div className="animate-pulse grid grid-cols-1 lg:grid-cols-3 gap-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-64 bg-slate-200 rounded-xl" />
+            <div key={i} className="h-64 bg-slate-200 dark:bg-slate-700 rounded-xl" />
           ))}
         </div>
       </div>
@@ -97,37 +98,41 @@ export default function OverviewPage() {
 
   const { metrics, trends, riskDistribution, districtPerformances, actions } = data;
 
-  const activeMonth = filters.month && filters.month !== "all" ? filters.month : "2025-09";
+  const activeMonth = filters.month && filters.month !== "all" ? filters.month : "September_2025";
   const monthName = MONTH_FULL[activeMonth] || "Current";
-  const year = "2025";
 
   const execSummary: ExecutiveSummary = {
     month: monthName,
-    year,
+    year: "2025",
     attendanceRate: metrics.attendanceRate,
-    attendanceChange: trends.attendanceTrend[0]?.absoluteChange || 0,
+    attendanceChange: trends.attendanceTrend.length > 1 ? trends.attendanceTrend[trends.attendanceTrend.length - 1].absoluteChange : 0,
     participationRate: metrics.participationRate,
-    participationChange: trends.participationTrend[0]?.absoluteChange || 0,
+    participationChange: trends.participationTrend.length > 1 ? trends.participationTrend[trends.participationTrend.length - 1].absoluteChange : 0,
     evidenceRate: metrics.evidenceSubmissionRate,
-    evidenceChange: trends.evidenceTrend[0]?.absoluteChange || 0,
+    evidenceChange: trends.evidenceTrend.length > 1 ? trends.evidenceTrend[trends.evidenceTrend.length - 1].absoluteChange : 0,
     totalDistricts: districtPerformances.length,
     criticalDistricts: districtPerformances.filter((d) => d.riskLevel === "Critical").length,
     criticalDistrictNames: districtPerformances.filter((d) => d.riskLevel === "Critical").map((d) => d.name),
   };
 
   const trendToData = (tr: { current: number }[]) =>
-    MONTHS.slice(1).map((m, i) => ({
+    MONTHS.map((m, i) => ({
       month: m,
       value: tr[i]?.current || 0,
     }));
+
+  const latestTrend = (tr: TrendData[]) => tr.length > 1 ? tr[tr.length - 1] : tr[0];
+  const attTrend = latestTrend(trends.attendanceTrend);
+  const partTrend = latestTrend(trends.participationTrend);
+  const evidTrend = latestTrend(trends.evidenceTrend);
 
   const stats: StatItem[] = [
     { label: "Schools", value: metrics.totalSchools },
     { label: "Districts", value: districtPerformances.length },
     { label: "Students", value: metrics.totalEnrollment.toLocaleString() },
-    { label: "Attendance", value: `${metrics.attendanceRate}%`, trend: { direction: trends.attendanceTrend[0]?.direction as "up" | "down" || "stable", value: `${Math.abs(trends.attendanceTrend[0]?.absoluteChange || 0)}%` } },
-    { label: "Participation", value: `${metrics.participationRate}%`, trend: { direction: trends.participationTrend[0]?.direction as "up" | "down" || "stable", value: `${Math.abs(trends.participationTrend[0]?.absoluteChange || 0)}%` } },
-    { label: "Evidence", value: `${metrics.evidenceSubmissionRate}%`, trend: { direction: trends.evidenceTrend[0]?.direction as "up" | "down" || "stable", value: `${Math.abs(trends.evidenceTrend[0]?.absoluteChange || 0)}%` } },
+    { label: "Attendance", value: `${metrics.attendanceRate}%`, trend: { direction: attTrend?.direction as "up" | "down" || "stable", value: `${Math.abs(attTrend?.absoluteChange || 0)}%` } },
+    { label: "Participation", value: `${metrics.participationRate}%`, trend: { direction: partTrend?.direction as "up" | "down" || "stable", value: `${Math.abs(partTrend?.absoluteChange || 0)}%` } },
+    { label: "Evidence", value: `${metrics.evidenceSubmissionRate}%`, trend: { direction: evidTrend?.direction as "up" | "down" || "stable", value: `${Math.abs(evidTrend?.absoluteChange || 0)}%` } },
   ];
 
   const criticalCount = districtPerformances.filter((d) => d.riskLevel === "Critical").length;
@@ -141,12 +146,14 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-5">
-        <ExecutiveSummaryBanner data={execSummary} />
-        <p className="text-sm text-slate-500 -mt-3">Monitor participation, attendance, evidence submissions, and district performance trends across all program areas.</p>
+      <ExecutiveSummaryBanner data={execSummary} />
+      <p className="text-sm text-slate-500 dark:text-slate-400 -mt-3">
+        Monitor participation, attendance, evidence submissions, and district performance trends across all program areas.
+      </p>
 
       <QuickStatsStrip items={stats} />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard
           title="On Track"
           value={onTrackCount}
@@ -177,49 +184,49 @@ export default function OverviewPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <MetricCard
           title="Participation Rate"
           value={`${metrics.participationRate}%`}
           icon={<ClipboardCheck className="h-5 w-5" />}
-          trend={trends.participationTrend[0] ? {
-            current: trends.participationTrend[0].current,
-            previous: trends.participationTrend[0].previous,
-            absoluteChange: trends.participationTrend[0].absoluteChange,
+          trend={partTrend ? {
+            current: partTrend.current,
+            previous: partTrend.previous,
+            absoluteChange: partTrend.absoluteChange,
             percentageChange: 0,
-            direction: trends.participationTrend[0].direction as "up" | "down" | "stable",
-            label: trends.participationTrend[0].label,
+            direction: partTrend.direction as "up" | "down" | "stable",
+            label: partTrend.label,
           } : undefined}
         />
         <MetricCard
           title="Attendance Rate"
           value={`${metrics.attendanceRate}%`}
           icon={<BookOpen className="h-5 w-5" />}
-          trend={trends.attendanceTrend[0] ? {
-            current: trends.attendanceTrend[0].current,
-            previous: trends.attendanceTrend[0].previous,
-            absoluteChange: trends.attendanceTrend[0].absoluteChange,
+          trend={attTrend ? {
+            current: attTrend.current,
+            previous: attTrend.previous,
+            absoluteChange: attTrend.absoluteChange,
             percentageChange: 0,
-            direction: trends.attendanceTrend[0].direction as "up" | "down" | "stable",
-            label: trends.attendanceTrend[0].label,
+            direction: attTrend.direction as "up" | "down" | "stable",
+            label: attTrend.label,
           } : undefined}
         />
         <MetricCard
           title="Evidence Submission"
           value={`${metrics.evidenceSubmissionRate}%`}
           icon={<ImageIcon className="h-5 w-5" />}
-          trend={trends.evidenceTrend[0] ? {
-            current: trends.evidenceTrend[0].current,
-            previous: trends.evidenceTrend[0].previous,
-            absoluteChange: trends.evidenceTrend[0].absoluteChange,
+          trend={evidTrend ? {
+            current: evidTrend.current,
+            previous: evidTrend.previous,
+            absoluteChange: evidTrend.absoluteChange,
             percentageChange: 0,
-            direction: trends.evidenceTrend[0].direction as "up" | "down" | "stable",
-            label: trends.evidenceTrend[0].label,
+            direction: evidTrend.direction as "up" | "down" | "stable",
+            label: evidTrend.label,
           } : undefined}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <TrendChart
           title="Participation Trend"
           data={trendToData(trends.participationTrend)}
@@ -245,9 +252,9 @@ export default function OverviewPage() {
         <DistrictRiskHeatmap data={districtPerformances.map((d) => ({ name: d.name, riskLevel: d.riskLevel, riskScore: d.riskScore }))} />
         <div className="space-y-4">
           {actions.length > 0 && (
-            <div className="bg-white rounded-xl border border-orange-200 shadow-sm overflow-hidden">
-              <div className="bg-orange-50 px-4 py-2.5 border-b border-orange-200">
-                <h3 className="text-sm font-semibold text-orange-800 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-orange-200 dark:border-orange-800 shadow-sm overflow-hidden">
+              <div className="bg-orange-50 dark:bg-orange-900/20 px-4 py-2.5 border-b border-orange-200 dark:border-orange-800">
+                <h3 className="text-sm font-semibold text-orange-800 dark:text-orange-300 flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
                   Priority Actions
                 </h3>
@@ -255,21 +262,21 @@ export default function OverviewPage() {
               <div className="p-3 space-y-2">
                 {actions.slice(0, 3).map((action, i) => (
                   <div key={i} className="flex items-start gap-2.5 text-sm">
-                    <span className="w-5 h-5 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-orange-100 dark:bg-orange-800 text-orange-700 dark:text-orange-300 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
                       {i + 1}
                     </span>
                     <div>
-                      <p className="font-medium text-slate-900 text-xs">{action.title}</p>
-                      <p className="text-[11px] text-slate-500">{action.description}</p>
+                      <p className="font-medium text-slate-900 dark:text-slate-100 text-xs">{action.title}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">{action.description}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
-          <div className="bg-white rounded-xl border border-slate-200 p-4">
-            <h3 className="text-sm font-medium text-slate-900 mb-3">Monthly Summary</h3>
-            <div className="space-y-2 text-sm text-slate-600">
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+            <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-3">Monthly Summary</h3>
+            <div className="space-y-2 text-sm text-slate-700 dark:text-slate-200">
               <p>
                 <strong>{metrics.participatingSchools}</strong> of{" "}
                 <strong>{metrics.totalSchools}</strong> schools participated in PBL

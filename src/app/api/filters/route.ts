@@ -1,8 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { FilterOptions } from "@/types";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const districtFilter = searchParams.get("district") || undefined;
+
   const months = await prisma.schoolMetric.findMany({
     select: { reportingMonth: true },
     distinct: ["reportingMonth"],
@@ -14,9 +17,13 @@ export async function GET() {
     orderBy: { name: "asc" },
   });
 
+  const blockQuery: Record<string, unknown> = {};
+  if (districtFilter) {
+    blockQuery.district = { name: districtFilter };
+  }
   const blocks = await prisma.block.findMany({
-    select: { name: true },
-    distinct: ["name"],
+    where: blockQuery,
+    select: { name: true, district: { select: { name: true } } },
     orderBy: { name: "asc" },
   });
 
@@ -35,7 +42,10 @@ export async function GET() {
   const options: FilterOptions = {
     months: months.map((m) => m.reportingMonth),
     districts: districts.map((d) => d.name),
-    blocks: blocks.map((b) => b.name),
+    blocks: blocks.map((b) => ({
+      name: b.name,
+      districtName: b.district.name,
+    })),
     grades: grades.map((g) => g.grade),
     subjects: subjects.map((s) => s.subject),
   };

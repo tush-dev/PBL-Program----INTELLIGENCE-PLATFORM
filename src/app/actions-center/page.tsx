@@ -80,9 +80,9 @@ export default function ActionsCenterPage() {
   const totalPages = Math.ceil(filtered.length / pageSize);
 
   const priorityColors: Record<string, string> = {
-    High: "bg-red-100 text-red-700 border-red-200",
-    Medium: "bg-amber-100 text-amber-700 border-amber-200",
-    Low: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    High: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-800",
+    Medium: "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-800",
+    Low: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800",
   };
 
   return (
@@ -96,13 +96,13 @@ export default function ActionsCenterPage() {
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
               <input
                 type="text"
                 placeholder="Search actions..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-                className="w-full h-9 rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full h-9 rounded-lg border border-slate-300 dark:border-[var(--input)] bg-white dark:bg-slate-800 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 dark:focus:border-emerald-500"
                 aria-label="Search actions"
               />
             </div>
@@ -111,11 +111,11 @@ export default function ActionsCenterPage() {
                 <button
                   key={p}
                   onClick={() => { setPriorityFilter(p); setPage(0); }}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                    priorityFilter === p
-                      ? "bg-slate-900 text-white border-slate-900"
-                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                  }`}
+                    className={`px-2.5 py-1.5 text-[11px] font-medium rounded-md border transition-colors ${
+                      priorityFilter === p
+                        ? "bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100"
+                        : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-[var(--input)] dark:hover:bg-slate-700"
+                    }`}
                 >
                   {p}
                 </button>
@@ -128,12 +128,12 @@ export default function ActionsCenterPage() {
       {loading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-28 bg-slate-200 rounded-xl animate-pulse" />
+            <div key={i} className="h-28 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
         <Card>
-          <CardContent className="p-12 text-center text-slate-400">
+          <CardContent className="p-12 text-center text-slate-400 dark:text-slate-500">
             <ListChecks className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p className="text-sm font-medium">No actions generated</p>
             <p className="text-xs mt-1">Try adjusting your filter selection</p>
@@ -148,21 +148,21 @@ export default function ActionsCenterPage() {
                   <div className="flex items-start gap-4">
                     <div className={cn(
                       "rounded-full w-8 h-8 flex items-center justify-center shrink-0 text-sm font-medium",
-                      action.priority === "High" ? "bg-red-100 text-red-700" :
-                      action.priority === "Medium" ? "bg-amber-100 text-amber-700" :
-                      "bg-emerald-100 text-emerald-700"
+                      action.priority === "High" ? "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300" :
+                      action.priority === "Medium" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300" :
+                      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300"
                     )}>
                       <AlertCircle className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
-                        <h3 className="font-semibold text-slate-900 text-sm">
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
                           {action.title}
                         </h3>
                         <div className="flex items-center gap-2 shrink-0">
                           <Badge
                             variant="outline"
-                            className={priorityColors[action.priority] || "bg-slate-100 text-slate-700"}
+                            className={priorityColors[action.priority] || "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200"}
                           >
                             {action.priority}
                           </Badge>
@@ -171,10 +171,10 @@ export default function ActionsCenterPage() {
                           )}
                         </div>
                       </div>
-                      <p className="text-sm text-slate-600 mt-1.5 leading-relaxed">
+                      <p className="text-sm text-slate-700 dark:text-slate-200 mt-1.5 leading-relaxed">
                         {action.description}
                       </p>
-                      <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-slate-500">
+                      <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-slate-500 dark:text-slate-400">
                         <span className="flex items-center gap-1">
                           <User className="h-3.5 w-3.5" />
                           {action.owner}
@@ -198,13 +198,13 @@ export default function ActionsCenterPage() {
             ))}
           </div>
           {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-slate-500">
+            <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-3">
+              <p className="text-xs text-slate-500 dark:text-slate-300">
                 Showing {page * pageSize + 1} to {Math.min((page + 1) * pageSize, filtered.length)} of {filtered.length}
               </p>
               <div className="flex gap-1">
-                <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)} className="h-7 text-xs">Prev</Button>
-                <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)} className="h-7 text-xs">Next</Button>
+                <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)} className="h-7 text-xs text-slate-700 dark:text-slate-200">Prev</Button>
+                <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)} className="h-7 text-xs text-slate-700 dark:text-slate-200">Next</Button>
               </div>
             </div>
           )}

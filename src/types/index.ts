@@ -149,10 +149,15 @@ export interface EvidenceAsset {
   imageUrl?: string;
 }
 
+export interface BlockOption {
+  name: string;
+  districtName: string;
+}
+
 export interface FilterOptions {
   months: string[];
   districts: string[];
-  blocks: string[];
+  blocks: BlockOption[];
   grades: string[];
   subjects: string[];
 }
@@ -182,6 +187,22 @@ export interface StatItem {
     direction: "up" | "down" | "stable";
     value: string;
   };
+}
+
+export interface GrantNarrativeData {
+  grantName: string;
+  grantCode: string;
+  reportingMonth: string;
+  coveredDistricts: string;
+  budgetUtilizationPercent: number;
+  pblCompletionPercent: number;
+  evidenceSubmissionPercent: number;
+  attendancePercent: number;
+  riskStatus: string;
+  topIssues: string[];
+  financialSummary: string;
+  outcomeSummary: string;
+  recommendations: string[];
 }
 
 export interface ExecutiveSummary {

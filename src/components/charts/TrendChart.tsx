@@ -19,9 +19,9 @@ interface TrendChartProps {
 }
 
 const MONTH_LABELS: Record<string, string> = {
-  "2025-07": "Jul",
-  "2025-08": "Aug",
-  "2025-09": "Sep",
+  "July_2025": "Jul",
+  "August_2025": "Aug",
+  "September_2025": "Sep",
 };
 
 export function TrendChart({
@@ -43,29 +43,29 @@ export function TrendChart({
   const yMax = Math.min(100, Math.ceil(max + padding));
 
   return (
-    <Card>
+    <Card className="dark:bg-slate-800 dark:border-slate-700">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <CardTitle className="text-sm font-medium text-slate-900 dark:text-slate-100">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[220px]">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="min-h-0">
+          <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id={`gradient-${title.replace(/\s/g, "")}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={color} stopOpacity={0.15} />
-                  <stop offset="95%" stopColor={color} stopOpacity={0.01} />
+                  <stop offset="5%" stopColor={color} stopOpacity={0.2} />
+                  <stop offset="95%" stopColor={color} stopOpacity={0.02} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
               <XAxis
                 dataKey="month"
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
-                axisLine={{ stroke: "#e2e8f0" }}
+                tick={{ fontSize: 12, fill: "#64748b" }}
+                axisLine={{ stroke: "#cbd5e1" }}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                tick={{ fontSize: 12, fill: "#64748b" }}
                 axisLine={false}
                 tickLine={false}
                 domain={[yMin, yMax]}
@@ -77,16 +77,18 @@ export function TrendChart({
                 contentStyle={{
                   fontSize: 12,
                   borderRadius: 8,
-                  border: "1px solid #e2e8f0",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                  border: "1px solid #E5E7EB",
+                  background: "#FFFFFF",
+                  color: "#4B5563",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                 }}
-                labelStyle={{ fontWeight: 600, marginBottom: 4 }}
+                labelStyle={{ fontWeight: 600, marginBottom: 4, color: "#111827" }}
               />
               <Area
                 type="monotone"
                 dataKey={dataKey}
                 stroke={color}
-                strokeWidth={2.5}
+                strokeWidth={3}
                 fill={`url(#gradient-${title.replace(/\s/g, "")})`}
                 dot={{ fill: color, r: 4, strokeWidth: 0 }}
                 activeDot={{ r: 6, stroke: color, strokeWidth: 2, fill: "#fff" }}

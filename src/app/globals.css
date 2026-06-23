@@ -25,11 +25,41 @@
   --input: oklch(0.929 0.013 255.508);
   --ring: oklch(0.606 0.136 158.956);
   --radius: 0.75rem;
+  --chart-1: oklch(0.606 0.136 158.956);
+  --chart-2: oklch(0.527 0.154 150.069);
+  --chart-3: oklch(0.646 0.222 41.116);
+  --chart-4: oklch(0.577 0.245 27.325);
 
   --risk-on-track: oklch(0.527 0.154 150.069);
   --risk-behind: oklch(0.681 0.162 75.834);
   --risk-at-risk: oklch(0.646 0.222 41.116);
   --risk-critical: oklch(0.577 0.245 27.325);
+}
+
+.dark {
+  --background: oklch(0.12 0.02 260);
+  --foreground: oklch(0.96 0.01 260);
+  --card: oklch(0.18 0.02 260);
+  --card-foreground: oklch(0.96 0.01 260);
+  --popover: oklch(0.23 0.02 260);
+  --popover-foreground: oklch(0.96 0.01 260);
+  --primary: oklch(0.606 0.136 158.956);
+  --primary-foreground: oklch(0.982 0.005 158.956);
+  --secondary: oklch(0.14 0.02 260);
+  --secondary-foreground: oklch(0.85 0.01 260);
+  --muted: oklch(0.10 0.02 260);
+  --muted-foreground: oklch(0.65 0.02 260);
+  --accent: oklch(0.22 0.02 260);
+  --accent-foreground: oklch(0.85 0.01 260);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.9 0.02 286.286);
+  --border: oklch(0.30 0.02 260);
+  --input: oklch(0.30 0.02 260);
+  --ring: oklch(0.606 0.136 158.956);
+  --chart-1: oklch(0.606 0.136 158.956);
+  --chart-2: oklch(0.527 0.154 150.069);
+  --chart-3: oklch(0.646 0.222 41.116);
+  --chart-4: oklch(0.577 0.245 27.325);
 }
 
 * {
@@ -46,6 +76,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  *, *::before, *::after {
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+  }
+
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
@@ -57,6 +91,10 @@
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: oklch(0.871 0.006 286.286) transparent;
+  }
+
+  .dark .scrollbar-thin {
+    scrollbar-color: oklch(0.3 0.02 260) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -71,6 +109,10 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: oklch(0.871 0.006 286.286);
     border-radius: 4px;
+  }
+
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: oklch(0.3 0.02 260);
   }
 
   .scrollbar-none {
@@ -93,11 +135,25 @@
     transform: translateY(-1px);
   }
 
+  .dark .card-hover:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+
+  .dark [data-slot="card"] {
+    box-shadow: 0 0 0 1px var(--border), 0 1px 2px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.08);
+  }
+
   .risk-critical {
     --risk-color: var(--risk-critical);
     --risk-bg: oklch(0.936 0.032 17.717);
     --risk-text: oklch(0.396 0.141 25.723);
     --risk-border: oklch(0.808 0.114 19.571);
+  }
+
+  .dark .risk-critical {
+    --risk-bg: oklch(0.2 0.06 25);
+    --risk-text: oklch(0.8 0.06 25);
+    --risk-border: oklch(0.4 0.08 25);
   }
 
   .risk-at-risk {
@@ -107,11 +163,23 @@
     --risk-border: oklch(0.836 0.128 33.571);
   }
 
+  .dark .risk-at-risk {
+    --risk-bg: oklch(0.2 0.06 40);
+    --risk-text: oklch(0.8 0.06 40);
+    --risk-border: oklch(0.4 0.08 40);
+  }
+
   .risk-behind {
     --risk-color: var(--risk-behind);
     --risk-bg: oklch(0.951 0.05 75.834);
     --risk-text: oklch(0.488 0.097 75.834);
     --risk-border: oklch(0.852 0.099 70.748);
+  }
+
+  .dark .risk-behind {
+    --risk-bg: oklch(0.2 0.06 75);
+    --risk-text: oklch(0.8 0.06 75);
+    --risk-border: oklch(0.4 0.08 75);
   }
 
   .risk-on-track {
@@ -121,11 +189,41 @@
     --risk-border: oklch(0.793 0.101 150.069);
   }
 
+  .dark .risk-on-track {
+    --risk-bg: oklch(0.15 0.06 150);
+    --risk-text: oklch(0.7 0.08 150);
+    --risk-border: oklch(0.3 0.08 150);
+  }
+
+  .table-header-dark thead tr {
+    background-color: oklch(0.968 0.007 247.896);
+  }
+
+  .dark .table-header-dark thead tr {
+    background-color: oklch(0.22 0.025 260);
+  }
+
+  .table-zebra tbody tr {
+    background-color: oklch(1 0 0);
+  }
+
+  .dark .table-zebra tbody tr {
+    background-color: oklch(0.17 0.02 260);
+  }
+
   .table-zebra tbody tr:nth-child(even) {
     background-color: oklch(0.985 0 0);
   }
 
+  .dark .table-zebra tbody tr:nth-child(even) {
+    background-color: oklch(0.13 0.02 260);
+  }
+
   .table-zebra tbody tr:hover {
     background-color: oklch(0.962 0.026 247.896);
+  }
+
+  .dark .table-zebra tbody tr:hover {
+    background-color: oklch(0.25 0.025 260);
   }
 }

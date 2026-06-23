@@ -32,8 +32,8 @@ export function BarChartComponent({
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
+        <div className="min-h-0">
+          <ResponsiveContainer width="100%" height={200}>
             <BarChart data={data} layout="vertical" margin={{ left: 100 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis
@@ -58,7 +58,10 @@ export function BarChartComponent({
                 contentStyle={{
                   fontSize: 12,
                   borderRadius: 8,
-                  border: "1px solid #e2e8f0",
+                  border: "1px solid #E5E7EB",
+                  background: "#FFFFFF",
+                  color: "#4B5563",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
                 }}
               />
               <Bar

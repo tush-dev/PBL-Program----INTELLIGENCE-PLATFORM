@@ -12,6 +12,9 @@ export async function GET(request: NextRequest) {
   };
 
   const blocks = await prisma.block.findMany({
+    where: filters.district
+      ? { district: { name: filters.district } }
+      : undefined,
     include: {
       district: true,
       schools: {

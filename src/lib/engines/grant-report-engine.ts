@@ -82,7 +82,7 @@ export async function generateGrantReport(
     relativePath: e.relativePath,
     usageNote: e.usageNote,
     imageUrl: e.relativePath
-      ? `/${e.relativePath}`
+      ? `/api/media/${e.relativePath}`
       : undefined,
   }));
 

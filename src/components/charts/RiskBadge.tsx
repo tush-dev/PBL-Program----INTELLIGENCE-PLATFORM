@@ -34,7 +34,7 @@ export function RiskBadge({ level, size = "default", showIcon = true }: RiskBadg
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full border font-medium",
-        config?.className || "bg-slate-100 text-slate-800 border-slate-200",
+        config?.className || "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700",
         size === "sm" && "text-[10px] px-1.5 py-0.5",
         size === "default" && "text-xs px-2 py-0.5",
         size === "lg" && "text-sm px-3 py-1"

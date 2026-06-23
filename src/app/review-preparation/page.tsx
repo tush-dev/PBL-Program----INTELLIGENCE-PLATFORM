@@ -90,10 +90,10 @@ export default function ReviewPreparationPage() {
       <div className="space-y-5">
         <PageHeader title="Review Preparation" description="Loading..." />
         <div className="animate-pulse space-y-4">
-          <div className="h-24 bg-slate-200 rounded-xl" />
+          <div className="h-24 bg-slate-200 dark:bg-slate-700 rounded-xl" />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="h-40 bg-slate-200 rounded-xl" />
-            <div className="h-40 bg-slate-200 rounded-xl" />
+            <div className="h-40 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+            <div className="h-40 bg-slate-200 dark:bg-slate-700 rounded-xl" />
           </div>
         </div>
       </div>
@@ -121,15 +121,15 @@ export default function ReviewPreparationPage() {
       </PageHeader>
 
       {/* Executive Summary Banner */}
-      <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50 to-white overflow-hidden">
+      <Card className="border-emerald-200 dark:border-emerald-800 bg-gradient-to-r from-emerald-50 to-white dark:from-emerald-950/30 dark:to-slate-800 overflow-hidden">
         <CardContent className="p-5">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center shrink-0">
               <FileText className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-900">Executive Summary</h2>
-              <p className="text-sm text-slate-700 mt-2 leading-relaxed">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Executive Summary</h2>
+              <p className="text-sm text-slate-700 dark:text-slate-300 mt-2 leading-relaxed">
                 {data.summary.executiveSummary}
               </p>
             </div>
@@ -139,39 +139,39 @@ export default function ReviewPreparationPage() {
 
       {/* Achievements & Risks */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="border-emerald-200">
+        <Card className="border-emerald-200 dark:border-emerald-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2 text-emerald-700">
+            <CardTitle className="text-sm font-medium flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
               <Award className="h-4 w-4" />
               Achievements
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {data.summary.achievements.map((a, i) => (
-              <div key={i} className="flex items-start gap-3 p-2 rounded-lg bg-emerald-50/50">
-                <span className="w-5 h-5 rounded-full bg-emerald-200 text-emerald-700 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+              <div key={i} className="flex items-start gap-3 p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/30">
+                <span className="w-5 h-5 rounded-full bg-emerald-200 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
                   {i + 1}
                 </span>
-                <p className="text-sm text-slate-700">{a}</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{a}</p>
               </div>
             ))}
           </CardContent>
         </Card>
 
-        <Card className="border-red-200">
+        <Card className="border-red-200 dark:border-red-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2 text-red-700">
+            <CardTitle className="text-sm font-medium flex items-center gap-2 text-red-700 dark:text-red-400">
               <AlertTriangle className="h-4 w-4" />
               Risks & Gaps
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {data.summary.gaps.map((g, i) => (
-              <div key={i} className="flex items-start gap-3 p-2 rounded-lg bg-red-50/50">
-                <span className="w-5 h-5 rounded-full bg-red-200 text-red-700 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+              <div key={i} className="flex items-start gap-3 p-2 rounded-lg bg-red-50/50 dark:bg-red-950/30">
+                <span className="w-5 h-5 rounded-full bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-300 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
                   {i + 1}
                 </span>
-                <p className="text-sm text-slate-700">{g}</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{g}</p>
               </div>
             ))}
           </CardContent>
@@ -180,9 +180,9 @@ export default function ReviewPreparationPage() {
 
       {/* Priority Areas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="border-orange-200">
+        <Card className="border-orange-200 dark:border-orange-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2 text-orange-700">
+            <CardTitle className="text-sm font-medium flex items-center gap-2 text-orange-700 dark:text-orange-400">
               <Target className="h-4 w-4" />
               Priority Districts
             </CardTitle>
@@ -190,21 +190,21 @@ export default function ReviewPreparationPage() {
           <CardContent>
             <div className="space-y-2">
               {data.summary.priorityDistricts.map((d, i) => (
-                <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-orange-50/50">
+                <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-orange-50/50 dark:bg-orange-950/30">
                   <ChevronRight className="h-4 w-4 text-orange-400 shrink-0" />
-                  <span className="text-sm font-medium text-slate-800">{d}</span>
+                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{d}</span>
                 </div>
               ))}
               {data.summary.priorityDistricts.length === 0 && (
-                <p className="text-sm text-slate-400">No priority districts identified</p>
+                <p className="text-sm text-slate-400 dark:text-slate-500">No priority districts identified</p>
               )}
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-orange-200">
+        <Card className="border-orange-200 dark:border-orange-800">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2 text-orange-700">
+            <CardTitle className="text-sm font-medium flex items-center gap-2 text-orange-700 dark:text-orange-400">
               <Target className="h-4 w-4" />
               Priority Blocks
             </CardTitle>
@@ -212,13 +212,13 @@ export default function ReviewPreparationPage() {
           <CardContent>
             <div className="space-y-2">
               {data.summary.priorityBlocks.map((b, i) => (
-                <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-orange-50/50">
+                <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-orange-50/50 dark:bg-orange-950/30">
                   <ChevronRight className="h-4 w-4 text-orange-400 shrink-0" />
-                  <span className="text-sm font-medium text-slate-800">{b}</span>
+                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200">{b}</span>
                 </div>
               ))}
               {data.summary.priorityBlocks.length === 0 && (
-                <p className="text-sm text-slate-400">No priority blocks identified</p>
+                <p className="text-sm text-slate-400 dark:text-slate-500">No priority blocks identified</p>
               )}
             </div>
           </CardContent>
@@ -226,9 +226,9 @@ export default function ReviewPreparationPage() {
       </div>
 
       {/* Recommended Actions */}
-      <Card className="border-blue-200">
+      <Card className="border-blue-200 dark:border-blue-800">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-700">
+          <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-700 dark:text-blue-400">
             <Lightbulb className="h-4 w-4" />
             Recommended Actions
           </CardTitle>
@@ -236,8 +236,8 @@ export default function ReviewPreparationPage() {
         <CardContent>
           <ul className="space-y-3">
             {data.summary.discussionPoints.map((p, i) => (
-              <li key={i} className="flex gap-3 text-sm text-slate-700">
-                <span className="bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center shrink-0 text-xs font-medium">
+              <li key={i} className="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
+                <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-full w-6 h-6 flex items-center justify-center shrink-0 text-xs font-medium">
                   {i + 1}
                 </span>
                 {p}
@@ -248,9 +248,9 @@ export default function ReviewPreparationPage() {
       </Card>
 
       {/* Discussion Questions */}
-      <Card className="border-purple-200">
+      <Card className="border-purple-200 dark:border-purple-800">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2 text-purple-700">
+          <CardTitle className="text-sm font-medium flex items-center gap-2 text-purple-700 dark:text-purple-400">
             <MessageSquare className="h-4 w-4" />
             Discussion Questions
           </CardTitle>
@@ -258,8 +258,8 @@ export default function ReviewPreparationPage() {
         <CardContent>
           <ul className="space-y-3">
             {data.summary.discussionPoints.map((p, i) => (
-              <li key={i} className="flex gap-3 text-sm text-slate-700">
-                <span className="bg-purple-100 text-purple-700 rounded-full w-6 h-6 flex items-center justify-center shrink-0 text-xs font-medium">
+              <li key={i} className="flex gap-3 text-sm text-slate-700 dark:text-slate-300">
+                <span className="bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-full w-6 h-6 flex items-center justify-center shrink-0 text-xs font-medium">
                   {i + 1}
                 </span>
                 {p}

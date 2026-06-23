@@ -20,10 +20,9 @@ export async function GET(request: NextRequest) {
   });
 
   const enriched = records.map((r) => {
-    const imagePath = r.relativePath
-      ? path.join(process.cwd(), r.relativePath)
-      : "";
-    const imageExists = imagePath ? fs.existsSync(imagePath) : false;
+    const fileName = r.fileName || path.basename(r.relativePath || "");
+    const publicPath = path.join(process.cwd(), "public", "images", fileName);
+    const imageExists = fileName ? fs.existsSync(publicPath) : false;
 
     return {
       id: r.id,
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
       relativePath: r.relativePath,
       usageNote: r.usageNote,
       imageExists,
-      imageUrl: imageExists ? `/api/media/${r.relativePath}` : null,
+      imageUrl: imageExists ? `/images/${encodeURIComponent(fileName)}` : null,
     };
   });
 

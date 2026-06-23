@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import type { ExecutiveSummary } from "@/types";
 
 interface ExecutiveSummaryBannerProps {
@@ -10,7 +10,7 @@ interface ExecutiveSummaryBannerProps {
   loading?: boolean;
 }
 
-function StatTile({
+function CompactStat({
   label,
   value,
   change,
@@ -22,17 +22,18 @@ function StatTile({
   direction: "up" | "down" | "stable";
 }) {
   return (
-    <div className="flex flex-col">
-      <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">{label}</span>
-      <span className="text-xl font-bold text-slate-900">{value}</span>
+    <div className="flex items-center gap-2 text-white">
+      <span className="text-[10px] font-medium text-emerald-200 uppercase tracking-wider min-w-[60px]">{label}</span>
+      <span className="text-sm font-bold">{value}</span>
       <span className={cn(
-        "inline-flex items-center gap-0.5 text-xs font-medium",
-        direction === "up" && "text-emerald-600",
-        direction === "down" && "text-red-600",
-        direction === "stable" && "text-slate-400"
+        "inline-flex items-center gap-0.5 text-[10px] font-medium",
+        direction === "up" && "text-emerald-300",
+        direction === "down" && "text-red-300",
+        direction === "stable" && "text-emerald-200"
       )}>
-        {direction === "up" && <TrendingUp className="h-3 w-3" />}
-        {direction === "down" && <TrendingDown className="h-3 w-3" />}
+        {direction === "up" && <TrendingUp className="h-2.5 w-2.5" />}
+        {direction === "down" && <TrendingDown className="h-2.5 w-2.5" />}
+        {direction === "stable" && <Minus className="h-2.5 w-2.5" />}
         {change}
       </span>
     </div>
@@ -43,14 +44,12 @@ export function ExecutiveSummaryBanner({ data, loading }: ExecutiveSummaryBanner
   if (loading) {
     return (
       <Card>
-        <CardContent className="p-5">
-          <div className="animate-pulse space-y-3">
-            <div className="h-4 bg-slate-200 rounded w-48" />
-            <div className="flex gap-8">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-12 bg-slate-200 rounded w-24" />
-              ))}
-            </div>
+        <CardContent className="p-3">
+          <div className="animate-pulse flex gap-4">
+            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32" />
+            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24" />
+            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24" />
+            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24" />
           </div>
         </CardContent>
       </Card>
@@ -60,37 +59,36 @@ export function ExecutiveSummaryBanner({ data, loading }: ExecutiveSummaryBanner
   if (!data) return null;
 
   return (
-    <Card className="overflow-hidden border-0 shadow-md bg-gradient-to-r from-emerald-600 to-emerald-700">
-      <CardContent className="p-5 text-white">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-8">
-          <div className="shrink-0">
-            <h2 className="text-lg font-bold">{data.month} {data.year} Overview</h2>
-            <p className="text-sm text-emerald-200 mt-0.5">Program Performance Summary</p>
+    <Card className="overflow-hidden border-0 shadow-sm bg-gradient-to-r from-emerald-600 to-emerald-700 dark:from-emerald-800 dark:to-emerald-900">
+      <CardContent className="p-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+          <div className="shrink-0 flex items-center gap-2">
+            <h2 className="text-sm font-bold text-white whitespace-nowrap">{data.month} {data.year}</h2>
+            <span className="text-[10px] text-emerald-200 hidden sm:inline">|</span>
           </div>
-
-          <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatTile
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1">
+            <CompactStat
               label="Attendance"
               value={`${data.attendanceRate}%`}
-              change={`${data.attendanceChange >= 0 ? "+" : ""}${data.attendanceChange}% from ${data.month === "January" ? "Dec" : "last month"}`}
+              change={`${data.attendanceChange >= 0 ? "+" : ""}${data.attendanceChange}%`}
               direction={data.attendanceChange >= 0 ? "up" : "down"}
             />
-            <StatTile
+            <CompactStat
               label="Participation"
               value={`${data.participationRate}%`}
-              change={`${data.participationChange >= 0 ? "+" : ""}${data.participationChange}% from ${data.month === "January" ? "Dec" : "last month"}`}
+              change={`${data.participationChange >= 0 ? "+" : ""}${data.participationChange}%`}
               direction={data.participationChange >= 0 ? "up" : "down"}
             />
-            <StatTile
-              label="Evidence Submission"
+            <CompactStat
+              label="Evidence"
               value={`${data.evidenceRate}%`}
-              change={`${data.evidenceChange >= 0 ? "+" : ""}${data.evidenceChange}% from ${data.month === "January" ? "Dec" : "last month"}`}
+              change={`${data.evidenceChange >= 0 ? "+" : ""}${data.evidenceChange}%`}
               direction={data.evidenceChange >= 0 ? "up" : "down"}
             />
-            <StatTile
-              label="Districts at Risk"
+            <CompactStat
+              label="At Risk"
               value={String(data.criticalDistricts)}
-              change={data.criticalDistricts > 0 ? "Require immediate attention" : "All on track"}
+              change={data.criticalDistricts > 0 ? `${data.criticalDistricts} district${data.criticalDistricts > 1 ? "s" : ""}` : "None"}
               direction={data.criticalDistricts > 0 ? "down" : "up"}
             />
           </div>
