@@ -67,331 +67,264 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
-export async function importSchoolData(month: string) {
-  const fileName = `PBL_School_Response_Data_${month}.csv`;
-  const filePath = path.join(CSV_DIR, fileName);
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+const toInt = (val: string) => { const n = parseInt(val, 10); return isNaN(n) ? 0 : n; };
+const toFloat = (val: string) => { const n = parseFloat(val); return isNaN(n) ? 0 : n; };
 
-  if (!fs.existsSync(filePath)) {
-    console.log(`File not found: ${filePath}, skipping.`);
-    return;
+// Reverse lookup: districtId → name, populated after bulk create + fetch
+let districtNameById = new Map<number, string>();
+
+interface MetricRow {
+  schoolId: number;
+  reportingMonth: string;
+  grade: string;
+  subject: string;
+  pblConducted: boolean;
+  evidenceSubmitted: boolean;
+  enrollmentClass6: number;
+  attendanceClass6Science: number;
+  attendanceClass6Math: number;
+  enrollmentClass7: number;
+  attendanceClass7Science: number;
+  attendanceClass7Math: number;
+  enrollmentClass8: number;
+  attendanceClass8Science: number;
+  attendanceClass8Math: number;
+  totalEnrollment: number;
+  totalAttendance: number;
+  attendanceRate: number;
+  riskStatus: string;
+}
+
+// ---------------------------------------------------------------------------
+// Public import functions
+// ---------------------------------------------------------------------------
+export async function importAllSchoolData() {
+  const months = ["July_2025", "August_2025", "September_2025"];
+  const schoolRowsByMonth: { month: string; row: Record<string, string> }[] = [];
+
+  for (const month of months) {
+    const fp = path.join(CSV_DIR, `PBL_School_Response_Data_${month}.csv`);
+    if (!fs.existsSync(fp)) { console.log(`Skipping ${month} — file not found`); continue; }
+    const rows = parseCSV(fp).filter((r) => r["What is your school's synthetic school code?"]);
+    rows.forEach((r) => schoolRowsByMonth.push({ month, row: r }));
+    console.log(`  Parsed ${rows.length} rows for ${month}`);
   }
 
-  const rows = parseCSV(filePath);
-  console.log(`Importing ${rows.length} rows from ${fileName}`);
+  const totalRows = schoolRowsByMonth.length;
+  console.log(`\nTotal school metric rows across all months: ${totalRows}`);
 
-  let imported = 0;
-  for (const row of rows) {
-    const schoolName = row["What is the name of your school?"];
-    const schoolCode = row["What is your school's synthetic school code?"];
-    const districtName = row["What is the name of your district?"];
-    const blockName = row["Block Details"];
-    const grade = row["In which class/classes did you conduct the PBL project?"];
-    const subject = row["Which subject do you teach?"];
-    const pblConducted = row["Was the PBL project conducted in your school this month?"]?.toLowerCase() === "yes";
-    const evidenceSubmitted = row["Was evidence submitted for the completed PBL project?"]?.toLowerCase() === "yes";
+  // 1. Collect all unique districts, blocks, schools in memory (0 DB queries)
+  const blockKey = (r: Record<string, string>) => `${r["Block Details"]}||${r["What is the name of your district?"]}`;
 
-    if (!schoolCode) continue;
+  const allDistrictNames = [...new Set(schoolRowsByMonth.map((e) => e.row["What is the name of your district?"]).filter(Boolean))];
+  const blockEntries = [...new Map(
+    schoolRowsByMonth.filter((e) => e.row["Block Details"])
+      .map((e) => [blockKey(e.row), { name: e.row["Block Details"], districtName: e.row["What is the name of your district?"] }])
+  ).values()];
+  const schoolEntries = [...new Map(
+    schoolRowsByMonth.filter((e) => e.row["What is your school's synthetic school code?"])
+      .map((e) => [e.row["What is your school's synthetic school code?"], {
+        code: e.row["What is your school's synthetic school code?"],
+        name: e.row["What is the name of your school?"],
+        blockKey: blockKey(e.row),
+      }])
+  ).values()];
 
-    const district = await prisma.district.upsert({
-      where: { name: districtName },
-      update: {},
-      create: { name: districtName },
+  console.log(`  Unique districts: ${allDistrictNames.length}`);
+  console.log(`  Unique blocks: ${blockEntries.length}`);
+  console.log(`  Unique schools: ${schoolEntries.length}`);
+
+  // 2. Bulk-create districts (1 createMany + 1 findMany)
+  console.log("\nCreating districts...");
+  await prisma.district.createMany({ data: allDistrictNames.map((n) => ({ name: n })), skipDuplicates: true });
+  const districts = new Map((await prisma.district.findMany({ where: { name: { in: allDistrictNames } } })).map((d) => [d.name, d.id]));
+  districtNameById = new Map([...districts.entries()].map(([name, id]) => [id, name]));
+
+  // 3. Bulk-create blocks (1 createMany + 1 findMany)
+  console.log("Creating blocks...");
+  const blockData = blockEntries
+    .map((e) => {
+      const did = districts.get(e.districtName);
+      return did ? { name: e.name, districtId: did } : null;
+    })
+    .filter((x): x is { name: string; districtId: number } => x !== null);
+  await prisma.block.createMany({ data: blockData, skipDuplicates: true });
+  const blockIds = [...new Set(blockData.map((b) => b.districtId))];
+  const blocks = new Map(
+    (await prisma.block.findMany({ where: { districtId: { in: blockIds } } }))
+      .map((b) => [`${b.name}||${districtNameById.get(b.districtId)}`, b.id])
+  );
+
+  // 4. Bulk-create schools (1 createMany + 1 findMany)
+  console.log("Creating schools...");
+  const blockDistricts = new Map(
+    (await prisma.block.findMany({ where: { districtId: { in: blockIds } } }))
+      .map((b) => [b.id, b.districtId])
+  );
+  const schoolData = schoolEntries
+    .map((e) => {
+      const bid = blocks.get(e.blockKey);
+      if (!bid) return null;
+      const did = blockDistricts.get(bid);
+      return did ? { code: e.code, name: e.name, blockId: bid, districtId: did } : null;
+    })
+    .filter((x): x is { code: string; name: string; blockId: number; districtId: number } => x !== null);
+  await prisma.school.createMany({ data: schoolData, skipDuplicates: true });
+  const schoolCodes = schoolData.map((s) => s.code);
+  const schools = new Map(
+    (await prisma.school.findMany({ where: { code: { in: schoolCodes } } })).map((s) => [s.code, s.id])
+  );
+
+  // 5. Bulk-create school metrics (createMany batches)
+  console.log("Creating school metrics...");
+  const allMetrics: MetricRow[] = [];
+  for (const { month, row } of schoolRowsByMonth) {
+    const sid = schools.get(row["What is your school's synthetic school code?"]);
+    if (!sid) continue;
+    allMetrics.push({
+      schoolId: sid, reportingMonth: month,
+      grade: row["In which class/classes did you conduct the PBL project?"],
+      subject: row["Which subject do you teach?"],
+      pblConducted: row["Was the PBL project conducted in your school this month?"]?.toLowerCase() === "yes",
+      evidenceSubmitted: row["Was evidence submitted for the completed PBL project?"]?.toLowerCase() === "yes",
+      enrollmentClass6: toInt(row["Total number of students enrolled in Class 6, including all sections"]),
+      attendanceClass6Science: toInt(row["Average student attendance during the Class 6 PBL Science session. If you did not teach Science in Class 6, enter 0."]),
+      attendanceClass6Math: toInt(row["Average student attendance during the Class 6 PBL Math session. If you did not teach Math in Class 6, enter 0."]),
+      enrollmentClass7: toInt(row["Total number of students enrolled in Class 7, including all sections"]),
+      attendanceClass7Science: toInt(row["Average student attendance during the Class 7 PBL Science session. If you did not teach Science in Class 7, enter 0."]),
+      attendanceClass7Math: toInt(row["Average student attendance during the Class 7 PBL Math session. If you did not teach Math in Class 7, enter 0."]),
+      enrollmentClass8: toInt(row["Total number of students enrolled in Class 8, including all sections"]),
+      attendanceClass8Science: toInt(row["Average student attendance during the Class 8 PBL Science session. If you did not teach Science in Class 8, enter 0."]),
+      attendanceClass8Math: toInt(row["Average student attendance during the Class 8 PBL Math session. If you did not teach Math in Class 8, enter 0."]),
+      totalEnrollment: toInt(row["Derived: Total enrollment across Classes 6-8"] || "0"),
+      totalAttendance: toInt(row["Derived: Total attendance across PBL Science and Math sessions"] || "0"),
+      attendanceRate: toFloat(row["Derived: Overall PBL attendance rate"] || "0"),
+      riskStatus: row["Derived: Risk status"] || "",
     });
-
-    const block = await prisma.block.upsert({
-      where: { name_districtId: { name: blockName, districtId: district.id } },
-      update: {},
-      create: { name: blockName, districtId: district.id },
-    });
-
-    const school = await prisma.school.upsert({
-      where: { code: schoolCode },
-      update: { name: schoolName, districtId: district.id, blockId: block.id },
-      create: {
-        name: schoolName,
-        code: schoolCode,
-        districtId: district.id,
-        blockId: block.id,
-      },
-    });
-
-    const toInt = (val: string) => {
-      const n = parseInt(val, 10);
-      return isNaN(n) ? 0 : n;
-    };
-
-    const toFloat = (val: string) => {
-      const n = parseFloat(val);
-      return isNaN(n) ? 0 : n;
-    };
-
-    const enrollmentClass6 = toInt(row["Total number of students enrolled in Class 6, including all sections"]);
-    const attendanceClass6Science = toInt(row["Average student attendance during the Class 6 PBL Science session. If you did not teach Science in Class 6, enter 0."]);
-    const attendanceClass6Math = toInt(row["Average student attendance during the Class 6 PBL Math session. If you did not teach Math in Class 6, enter 0."]);
-    const enrollmentClass7 = toInt(row["Total number of students enrolled in Class 7, including all sections"]);
-    const attendanceClass7Science = toInt(row["Average student attendance during the Class 7 PBL Science session. If you did not teach Science in Class 7, enter 0."]);
-    const attendanceClass7Math = toInt(row["Average student attendance during the Class 7 PBL Math session. If you did not teach Math in Class 7, enter 0."]);
-    const enrollmentClass8 = toInt(row["Total number of students enrolled in Class 8, including all sections"]);
-    const attendanceClass8Science = toInt(row["Average student attendance during the Class 8 PBL Science session. If you did not teach Science in Class 8, enter 0."]);
-    const attendanceClass8Math = toInt(row["Average student attendance during the Class 8 PBL Math session. If you did not teach Math in Class 8, enter 0."]);
-    const totalEnrollment = toInt(row["Derived: Total enrollment across Classes 6-8"] || "0");
-    const totalAttendance = toInt(row["Derived: Total attendance across PBL Science and Math sessions"] || "0");
-    const attendanceRate = toFloat(row["Derived: Overall PBL attendance rate"] || "0");
-    const riskStatus = row["Derived: Risk status"] || "";
-
-    await prisma.schoolMetric.upsert({
-      where: {
-        schoolId_reportingMonth_grade_subject: {
-          schoolId: school.id,
-          reportingMonth: month,
-          grade,
-          subject,
-        },
-      },
-      update: {
-        pblConducted,
-        evidenceSubmitted,
-        enrollmentClass6,
-        attendanceClass6Science,
-        attendanceClass6Math,
-        enrollmentClass7,
-        attendanceClass7Science,
-        attendanceClass7Math,
-        enrollmentClass8,
-        attendanceClass8Science,
-        attendanceClass8Math,
-        totalEnrollment,
-        totalAttendance,
-        attendanceRate,
-        riskStatus,
-      },
-      create: {
-        schoolId: school.id,
-        reportingMonth: month,
-        grade,
-        subject,
-        pblConducted,
-        evidenceSubmitted,
-        enrollmentClass6,
-        attendanceClass6Science,
-        attendanceClass6Math,
-        enrollmentClass7,
-        attendanceClass7Science,
-        attendanceClass7Math,
-        enrollmentClass8,
-        attendanceClass8Science,
-        attendanceClass8Math,
-        totalEnrollment,
-        totalAttendance,
-        attendanceRate,
-        riskStatus,
-      },
-    });
-
-    imported++;
-    if (imported % 500 === 0) console.log(`  Imported ${imported}...`);
   }
-  console.log(`  Done: ${imported} records imported for ${month}`);
+
+  const batchSize = 1000;
+  for (let i = 0; i < allMetrics.length; i += batchSize) {
+    await prisma.schoolMetric.createMany({ data: allMetrics.slice(i, i + batchSize), skipDuplicates: true });
+    console.log(`  ${Math.min(i + batchSize, allMetrics.length)} / ${allMetrics.length} metrics`);
+  }
+  console.log(`  Done: ${allMetrics.length} school metrics across ${months.length} months`);
 }
 
 export async function importGrantProfileAndFinance() {
   const filePath = path.join(CSV_DIR, "01_Grant_Profile_and_Finance.csv");
-  if (!fs.existsSync(filePath)) {
-    console.log("Grant Profile CSV not found, skipping.");
-    return;
-  }
+  if (!fs.existsSync(filePath)) { console.log("Grant Profile CSV not found, skipping."); return; }
 
   const rows = parseCSV(filePath);
   console.log(`Importing ${rows.length} grant finance records`);
 
-  const grantCache = new Map<string, boolean>();
+  // Bulk-create grants
+  const grantRows = [...new Map(rows.map((r) => [r["grant_id"], r])).values()];
+  const grants = grantRows.map((r) => ({
+    id: r["grant_id"],
+    donor: r["donor"],
+    name: r["grant_name"],
+    periodStart: r["period_start"],
+    periodEnd: r["period_end"],
+    coveredDistricts: r["covered_districts"],
+  }));
+  await prisma.grant.createMany({ data: grants, skipDuplicates: true });
+  console.log(`  Grants: ${grants.length}`);
 
-  for (const row of rows) {
-    const grantId = row["grant_id"];
-
-    if (!grantCache.has(grantId)) {
-      await prisma.grant.upsert({
-        where: { id: grantId },
-        update: {
-          donor: row["donor"],
-          name: row["grant_name"],
-          periodStart: row["period_start"],
-          periodEnd: row["period_end"],
-          coveredDistricts: row["covered_districts"],
-        },
-        create: {
-          id: grantId,
-          donor: row["donor"],
-          name: row["grant_name"],
-          periodStart: row["period_start"],
-          periodEnd: row["period_end"],
-          coveredDistricts: row["covered_districts"],
-        },
-      });
-      grantCache.set(grantId, true);
-    }
-
-    await prisma.grantFinance.upsert({
-      where: {
-        grantId_reportingMonth_budgetLine: {
-          grantId,
-          reportingMonth: row["reporting_month"],
-          budgetLine: row["budget_line"],
-        },
-      },
-      update: {
-        approvedBudget: parseFloat(row["approved_budget_units"]) || 0,
-        monthlyUtilized: parseFloat(row["monthly_utilized_units"]) || 0,
-        cumulativeUtilized: parseFloat(row["cumulative_utilized_units"]) || 0,
-        cumulativeUtilizationRate: parseFloat(row["cumulative_utilization_rate"]) || 0,
-        financeNote: row["finance_note"] || "",
-      },
-      create: {
-        grantId,
-        reportingMonth: row["reporting_month"],
-        budgetLine: row["budget_line"],
-        approvedBudget: parseFloat(row["approved_budget_units"]) || 0,
-        monthlyUtilized: parseFloat(row["monthly_utilized_units"]) || 0,
-        cumulativeUtilized: parseFloat(row["cumulative_utilized_units"]) || 0,
-        cumulativeUtilizationRate: parseFloat(row["cumulative_utilization_rate"]) || 0,
-        financeNote: row["finance_note"] || "",
-      },
-    });
-  }
-  console.log(`  Done: ${rows.length} grant finance records`);
+  // Bulk-create grant finances
+  const finances = rows.map((r) => ({
+    grantId: r["grant_id"],
+    reportingMonth: r["reporting_month"],
+    budgetLine: r["budget_line"],
+    approvedBudget: parseFloat(r["approved_budget_units"]) || 0,
+    monthlyUtilized: parseFloat(r["monthly_utilized_units"]) || 0,
+    cumulativeUtilized: parseFloat(r["cumulative_utilized_units"]) || 0,
+    cumulativeUtilizationRate: parseFloat(r["cumulative_utilization_rate"]) || 0,
+    financeNote: r["finance_note"] || "",
+  }));
+  await prisma.grantFinance.createMany({ data: finances, skipDuplicates: true });
+  console.log(`  Finance records: ${finances.length}`);
 }
 
 export async function importGrantPerformance() {
   const filePath = path.join(CSV_DIR, "02_Grant_Performance_and_Report_Material.csv");
-  if (!fs.existsSync(filePath)) {
-    console.log("Grant Performance CSV not found, skipping.");
-    return;
-  }
+  if (!fs.existsSync(filePath)) { console.log("Grant Performance CSV not found, skipping."); return; }
 
   const rows = parseCSV(filePath);
   console.log(`Importing ${rows.length} grant performance records`);
 
-  for (const row of rows) {
-    const grantId = row["grant_id"];
+  // Bulk-create grants that may not exist yet
+  const grantRows = [...new Map(rows.map((r) => [r["grant_id"], r])).values()];
+  const grants = grantRows.map((r) => ({
+    id: r["grant_id"],
+    donor: r["donor"],
+    name: r["grant_name"],
+    periodStart: "",
+    periodEnd: r["period_end_date"] || "",
+    coveredDistricts: r["covered_districts"] || "",
+  }));
+  await prisma.grant.createMany({ data: grants, skipDuplicates: true });
 
-    await prisma.grant.upsert({
-      where: { id: grantId },
-      update: {
-        donor: row["donor"],
-        name: row["grant_name"],
-      },
-      create: {
-        id: grantId,
-        donor: row["donor"],
-        name: row["grant_name"],
-        periodStart: "",
-        periodEnd: row["period_end_date"] || "",
-        coveredDistricts: row["covered_districts"] || "",
-      },
-    });
-
-    await prisma.grantPerformance.upsert({
-      where: {
-        grantId_reportingMonth: {
-          grantId,
-          reportingMonth: row["reporting_month"],
-        },
-      },
-      update: {
-        periodEndDate: row["period_end_date"] || "",
-        reportDueDate: row["report_due_date"] || "",
-        reportStatus: row["report_status"] || "",
-        coveredDistricts: row["covered_districts"] || "",
-        sampledSchoolRecords: parseInt(row["sampled_school_records"]) || 0,
-        schoolsCompletedPbl: parseInt(row["schools_completed_pbl"]) || 0,
-        pblCompletionRate: parseFloat(row["pbl_completion_rate"]) || 0,
-        schoolsWithEvidence: parseInt(row["schools_with_evidence"]) || 0,
-        evidenceSubmissionRate: parseFloat(row["evidence_submission_rate"]) || 0,
-        totalEnrollment: parseInt(row["total_enrollment"]) || 0,
-        totalAttendance: parseInt(row["total_attendance"]) || 0,
-        attendanceRate: parseFloat(row["attendance_rate"]) || 0,
-        riskStatus: row["risk_status"] || "",
-        milestoneSummary: row["milestone_summary"] || "",
-        draftReportText: row["draft_report_text"] || "",
-      },
-      create: {
-        grantId,
-        reportingMonth: row["reporting_month"],
-        periodEndDate: row["period_end_date"] || "",
-        reportDueDate: row["report_due_date"] || "",
-        reportStatus: row["report_status"] || "",
-        coveredDistricts: row["covered_districts"] || "",
-        sampledSchoolRecords: parseInt(row["sampled_school_records"]) || 0,
-        schoolsCompletedPbl: parseInt(row["schools_completed_pbl"]) || 0,
-        pblCompletionRate: parseFloat(row["pbl_completion_rate"]) || 0,
-        schoolsWithEvidence: parseInt(row["schools_with_evidence"]) || 0,
-        evidenceSubmissionRate: parseFloat(row["evidence_submission_rate"]) || 0,
-        totalEnrollment: parseInt(row["total_enrollment"]) || 0,
-        totalAttendance: parseInt(row["total_attendance"]) || 0,
-        attendanceRate: parseFloat(row["attendance_rate"]) || 0,
-        riskStatus: row["risk_status"] || "",
-        milestoneSummary: row["milestone_summary"] || "",
-        draftReportText: row["draft_report_text"] || "",
-      },
-    });
-  }
-  console.log(`  Done: ${rows.length} grant performance records`);
+  // Bulk-create performances
+  const performances = rows.map((r) => ({
+    grantId: r["grant_id"],
+    reportingMonth: r["reporting_month"],
+    periodEndDate: r["period_end_date"] || "",
+    reportDueDate: r["report_due_date"] || "",
+    reportStatus: r["report_status"] || "",
+    coveredDistricts: r["covered_districts"] || "",
+    sampledSchoolRecords: parseInt(r["sampled_school_records"]) || 0,
+    schoolsCompletedPbl: parseInt(r["schools_completed_pbl"]) || 0,
+    pblCompletionRate: parseFloat(r["pbl_completion_rate"]) || 0,
+    schoolsWithEvidence: parseInt(r["schools_with_evidence"]) || 0,
+    evidenceSubmissionRate: parseFloat(r["evidence_submission_rate"]) || 0,
+    totalEnrollment: parseInt(r["total_enrollment"]) || 0,
+    totalAttendance: parseInt(r["total_attendance"]) || 0,
+    attendanceRate: parseFloat(r["attendance_rate"]) || 0,
+    riskStatus: r["risk_status"] || "",
+    milestoneSummary: r["milestone_summary"] || "",
+    draftReportText: r["draft_report_text"] || "",
+  }));
+  await prisma.grantPerformance.createMany({ data: performances, skipDuplicates: true });
+  console.log(`  Performance records: ${performances.length}`);
 }
 
 export async function importEvidenceAssets() {
   const filePath = path.join(CSV_DIR, "03_Evidence_and_Media_Index.csv");
-  if (!fs.existsSync(filePath)) {
-    console.log("Evidence CSV not found, skipping.");
-    return;
-  }
+  if (!fs.existsSync(filePath)) { console.log("Evidence CSV not found, skipping."); return; }
 
   const rows = parseCSV(filePath);
   console.log(`Importing ${rows.length} evidence records`);
 
-  for (const row of rows) {
-    await prisma.evidenceAsset.upsert({
-      where: { id: row["record_id"] },
-      update: {
-        recordType: row["record_type"],
-        grantId: row["grant_id"],
-        donor: row["donor"],
-        reportingMonth: row["reporting_month"],
-        district: row["district"],
-        title: row["title"],
-        summary: row["summary_or_caption"] || "",
-        fileName: row["file_name"] || "",
-        relativePath: row["relative_path"] || "",
-        usageNote: row["usage_note"] || "",
-      },
-      create: {
-        id: row["record_id"],
-        recordType: row["record_type"],
-        grantId: row["grant_id"],
-        donor: row["donor"],
-        reportingMonth: row["reporting_month"],
-        district: row["district"],
-        title: row["title"],
-        summary: row["summary_or_caption"] || "",
-        fileName: row["file_name"] || "",
-        relativePath: row["relative_path"] || "",
-        usageNote: row["usage_note"] || "",
-      },
-    });
-  }
-  console.log(`  Done: ${rows.length} evidence records`);
+  const assets = rows.map((r) => ({
+    id: r["record_id"],
+    recordType: r["record_type"],
+    grantId: r["grant_id"],
+    donor: r["donor"],
+    reportingMonth: r["reporting_month"],
+    district: r["district"],
+    title: r["title"],
+    summary: r["summary_or_caption"] || "",
+    fileName: r["file_name"] || "",
+    relativePath: r["relative_path"] || "",
+    usageNote: r["usage_note"] || "",
+  }));
+  await prisma.evidenceAsset.createMany({ data: assets, skipDuplicates: true });
+  console.log(`  Evidence records: ${assets.length}`);
 }
 
 export async function importAll() {
-  console.log("=== PBL DATA IMPORT ===");
-  console.log("Importing school data...");
-  await importSchoolData("July_2025");
-  await importSchoolData("August_2025");
-  await importSchoolData("September_2025");
-  console.log("Importing grant data...");
+  console.log("=== PBL DATA IMPORT ===\n");
+  console.log("Importing school data (all months)...");
+  await importAllSchoolData();
+  console.log("\nImporting grant data...");
   await importGrantProfileAndFinance();
   await importGrantPerformance();
   await importEvidenceAssets();
-  console.log("=== IMPORT COMPLETE ===");
+  console.log("\n=== IMPORT COMPLETE ===");
 }
 
 async function main() {

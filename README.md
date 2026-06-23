@@ -15,7 +15,7 @@ Built for education program teams to understand what's working, what's not, whic
 │  └────┬─────┘  └────┬─────┘  └──────┬────────┘  │
 │       │              │              │            │
 │  ┌────┴──────────────┴──────────────┴────────┐  │
-│  │           Prisma ORM + SQLite              │  │
+│  │         Prisma ORM + PostgreSQL (Neon)       │  │
 │  └─────────────────┬─────────────────────────┘  │
 │                    │                             │
 │  ┌─────────────────┴─────────────────────────┐  │
@@ -27,7 +27,7 @@ Built for education program teams to understand what's working, what's not, whic
 ### Data Flow
 
 ```
-CSV Files → Import Pipeline → SQLite Database → KPI Engine
+CSV Files → Import Pipeline → PostgreSQL (Neon) Database → KPI Engine
                                                    ├── Risk Engine
                                                    ├── Trend Engine
                                                    ├── Review Engine
@@ -65,7 +65,7 @@ CSV Files → Import Pipeline → SQLite Database → KPI Engine
 - Normalized structure with proper foreign keys
 - Composite unique constraints prevent duplicates
 - Indexed on frequently queried columns (month, school, district, block)
-- SQLite for development; trivial migration to PostgreSQL
+- PostgreSQL via Neon with pooled connection for serverless
 
 ## Risk Logic (Deterministic)
 
@@ -103,9 +103,14 @@ npm install
 
 ### Set Up Database
 
+Create a Neon PostgreSQL database and set `DATABASE_URL` in `.env`:
+```env
+DATABASE_URL="postgresql://user:password@ep-xxxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
+```
+
+Push the schema to Neon:
 ```bash
-cp .env.example .env
-npx prisma migrate dev --name init
+npx prisma db push
 ```
 
 ### Import Data
@@ -173,6 +178,42 @@ Image files in `/images` (9 files) are loaded dynamically in the Evidence Center
 | `/api/evidence` | GET | Evidence records |
 | `/api/export` | POST | Export content |
 
+## Database (Neon PostgreSQL)
+
+This project uses **Neon PostgreSQL** via Prisma ORM. The schema is defined in `prisma/schema.prisma`.
+
+### Local Setup
+
+1. Create a **Neon** account at https://console.neon.tech
+2. Create a new project and copy the connection string
+3. Set it as `DATABASE_URL` in `.env`:
+   ```env
+   DATABASE_URL="postgresql://user:password@ep-xxxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
+   ```
+4. Push the schema to Neon:
+   ```bash
+   npx prisma db push
+   ```
+5. Import CSV data:
+   ```bash
+   npm run import-data
+   ```
+
+### Migration from SQLite
+
+1. Change the Prisma datasource provider from `sqlite` to `postgresql` in `prisma/schema.prisma`
+2. Replace `DATABASE_URL` in `.env` with your Neon PostgreSQL connection string
+3. Run `npx prisma db push` to create all tables
+4. Run `npm run import-data` to repopulate data (import is optimized for PostgreSQL with bulk inserts)
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | Yes | Neon PostgreSQL connection string |
+| `USE_AI` | No | Set to `"true"` to enable Groq AI narrative generation |
+| `GROQ_API_KEY` | No | Groq API key (required if `USE_AI=true`) |
+
 ## AI Integration (Optional)
 
 Set `USE_AI=true` and `GROQ_API_KEY` in `.env` to enable AI narrative generation via Groq (Llama 3.3 70B).
@@ -181,20 +222,21 @@ Set `USE_AI=true` and `GROQ_API_KEY` in `.env` to enable AI narrative generation
 
 Without AI (default), the `RuleBasedGenerator` produces structured, deterministic narratives.
 
-## Deployment (Vercel Free Tier)
+## Deployment (Vercel Free Tier + Neon)
 
-1. Push to GitHub
-2. Connect repo to Vercel
-3. Set `DATABASE_URL` to PostgreSQL connection string
-4. Run `npx prisma migrate deploy` in build step
-5. Deploy
+1. Create a **Neon** project at https://console.neon.tech
+2. In your Neon dashboard, go to **Connection Details** and copy the connection string (use the pooled connection string for serverless)
+3. Push to GitHub
+4. Connect repo to Vercel
+5. Add the following **Environment Variables** in Vercel:
+   - `DATABASE_URL`: Your Neon connection string (use the pooled URL with `-pooler` suffix and `?sslmode=require`)
+6. In Vercel build settings, add the following **Build Command**:
+   ```bash
+   npx prisma generate && next build
+   ```
+7. Deploy
 
-### Migrating to PostgreSQL
-
-1. Update `prisma/schema.prisma`: change provider to `postgresql`
-2. Update `DATABASE_URL` in `.env` to PostgreSQL connection string
-3. Run `npx prisma migrate dev --name pg-migration`
-4. Run `npm run import-data`
+Note: When using Vercel's serverless functions, always use the **pooled connection string** (contains `-pooler` in the hostname) from Neon to handle concurrent requests.
 
 ## Export Features
 
@@ -207,7 +249,7 @@ Without AI (default), the `RuleBasedGenerator` produces structured, deterministi
 - **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS v4, Shadcn UI, Recharts, Lucide React
 - **State**: Zustand
 - **Backend**: Next.js Route Handlers, TypeScript
-- **Database**: Prisma ORM + SQLite (PostgreSQL-ready)
+- **Database**: Prisma ORM + Neon PostgreSQL
 - **Validation**: Zod, React Hook Form
 - **Export**: jsPDF, docx
 - **Notifications**: Sonner
@@ -218,13 +260,13 @@ Without AI (default), the `RuleBasedGenerator` produces structured, deterministi
 
 **₹0.** All infrastructure and APIs are free-tier:
 - Vercel Free Tier
-- SQLite (self-contained)
+- Neon PostgreSQL (free tier, 500 MB storage)
 - Groq Free Tier (optional, no credit card required)
 - No paid APIs or services
 
 ## Tradeoffs & Assumptions
 
-1. **SQLite for development**: Chosen for zero-config setup. Migration to PostgreSQL is straightforward via Prisma.
+1. **Neon PostgreSQL in production**: Serverless PostgreSQL with connection pooling. Schema is managed via Prisma migrations.
 2. **Rule-based AI as default**: Ensures the app works perfectly without any API keys. AI adds narrative polish but is never required.
 3. **Deterministic risk engine**: All risk classifications use hard thresholds. No ML or probabilistic models.
 4. **Composite risk scoring**: Weighted average (40% participation, 30% attendance, 30% evidence) chosen for simplicity and explainability.
