@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.129 0.042 264.695);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.129 0.042 264.695);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.129 0.042 264.695);
+  --primary: oklch(0.606 0.136 158.956);
+  --primary-foreground: oklch(0.982 0.005 158.956);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.208 0.042 264.695);
+  --muted: oklch(0.968 0.007 247.896);
+  --muted-foreground: oklch(0.554 0.046 257.417);
+  --accent: oklch(0.968 0.007 247.896);
+  --accent-foreground: oklch(0.208 0.042 264.695);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
+  --border: oklch(0.929 0.013 255.508);
+  --input: oklch(0.929 0.013 255.508);
+  --ring: oklch(0.606 0.136 158.956);
+  --radius: 0.75rem;
+
+  --risk-on-track: oklch(0.527 0.154 150.069);
+  --risk-behind: oklch(0.681 0.162 75.834);
+  --risk-at-risk: oklch(0.646 0.222 41.116);
+  --risk-critical: oklch(0.577 0.245 27.325);
+}
+
+* {
+  border-color: var(--border);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: var(--radius);
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.871 0.006 286.286) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: oklch(0.871 0.006 286.286);
+    border-radius: 4px;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer components {
+  .card-hover {
+    transition: all 0.2s ease;
+  }
+
+  .card-hover:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .risk-critical {
+    --risk-color: var(--risk-critical);
+    --risk-bg: oklch(0.936 0.032 17.717);
+    --risk-text: oklch(0.396 0.141 25.723);
+    --risk-border: oklch(0.808 0.114 19.571);
+  }
+
+  .risk-at-risk {
+    --risk-color: var(--risk-at-risk);
+    --risk-bg: oklch(0.945 0.05 33.262);
+    --risk-text: oklch(0.479 0.153 32.816);
+    --risk-border: oklch(0.836 0.128 33.571);
+  }
+
+  .risk-behind {
+    --risk-color: var(--risk-behind);
+    --risk-bg: oklch(0.951 0.05 75.834);
+    --risk-text: oklch(0.488 0.097 75.834);
+    --risk-border: oklch(0.852 0.099 70.748);
+  }
+
+  .risk-on-track {
+    --risk-color: var(--risk-on-track);
+    --risk-bg: oklch(0.933 0.032 150.069);
+    --risk-text: oklch(0.393 0.095 152.535);
+    --risk-border: oklch(0.793 0.101 150.069);
+  }
+
+  .table-zebra tbody tr:nth-child(even) {
+    background-color: oklch(0.985 0 0);
+  }
+
+  .table-zebra tbody tr:hover {
+    background-color: oklch(0.962 0.026 247.896);
+  }
+}
