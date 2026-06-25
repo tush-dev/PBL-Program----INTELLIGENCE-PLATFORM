@@ -161,7 +161,7 @@ export default function BlockIntelligencePage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <CardTitle className="text-base">All Blocks Performance</CardTitle>
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="relative flex-1 min-w-[320px] max-w-[400px]">
+              <div className="relative w-full sm:flex-1 sm:min-w-[320px] sm:max-w-[400px]">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"

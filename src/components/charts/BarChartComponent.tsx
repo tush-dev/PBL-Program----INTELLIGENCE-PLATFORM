@@ -33,7 +33,8 @@ export function BarChartComponent({
       </CardHeader>
       <CardContent>
         <div className="min-h-0">
-          <ResponsiveContainer width="100%" height={200}>
+          <div className="h-44 sm:h-48 md:h-[200px]">
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} layout="vertical" margin={{ left: 100 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
               <XAxis
@@ -72,6 +73,7 @@ export function BarChartComponent({
               />
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
       </CardContent>
     </Card>

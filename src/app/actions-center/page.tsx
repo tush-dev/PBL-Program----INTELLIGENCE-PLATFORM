@@ -155,7 +155,7 @@ export default function ActionsCenterPage() {
                       <AlertCircle className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
                         <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
                           {action.title}
                         </h3>
@@ -202,7 +202,7 @@ export default function ActionsCenterPage() {
               <p className="text-xs text-slate-500 dark:text-slate-300">
                 Showing {page * pageSize + 1} to {Math.min((page + 1) * pageSize, filtered.length)} of {filtered.length}
               </p>
-              <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
                 <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(page - 1)} className="h-7 text-xs text-slate-700 dark:text-slate-200">Prev</Button>
                 <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)} className="h-7 text-xs text-slate-700 dark:text-slate-200">Next</Button>
               </div>

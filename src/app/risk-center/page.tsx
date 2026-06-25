@@ -164,7 +164,7 @@ export default function RiskCenterPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <CardTitle className="text-base">Risk Assessment Details</CardTitle>
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="relative flex-1 min-w-[260px] max-w-[360px]">
+                <div className="relative w-full sm:flex-1 sm:min-w-[260px] sm:max-w-[360px]">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
                   <input
                     type="text"
@@ -185,8 +185,8 @@ export default function RiskCenterPage() {
                   ]}
                   placeholder="All Types"
                   searchPlaceholder="Filter type..."
-                  triggerClassName="w-28"
-                  className="w-28"
+                  triggerClassName="w-full sm:w-28"
+                  className="w-full sm:w-28"
                 />
                 <div className="flex gap-1">
                   {RISK_FILTERS.map((rf) => (

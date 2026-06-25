@@ -29,7 +29,7 @@ export default function RootLayout({
               <div className="sticky top-0 z-40 bg-white border-b border-slate-200 dark:bg-slate-900 dark:border-slate-800">
                 <GlobalFilters />
               </div>
-              <main className="flex-1 overflow-y-auto p-6">{children}</main>
+              <main className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6">{children}</main>
             </div>
           </div>
           <Toaster position="top-right" />

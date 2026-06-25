@@ -48,7 +48,8 @@ export function PieChartComponent({ title, data }: PieChartComponentProps) {
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <div className="min-h-0 flex-1">
-          <ResponsiveContainer width="100%" height={180}>
+          <div className="h-36 sm:h-40 md:h-[180px]">
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
               layout="vertical"
@@ -81,6 +82,7 @@ export function PieChartComponent({ title, data }: PieChartComponentProps) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
         <div className="space-y-1">
           {data.map((entry) => {

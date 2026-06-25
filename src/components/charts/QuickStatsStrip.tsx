@@ -10,9 +10,9 @@ interface QuickStatsStripProps {
 export function QuickStatsStrip({ items, loading }: QuickStatsStripProps) {
   if (loading) {
     return (
-      <div className="animate-pulse flex gap-3">
+      <div className="animate-pulse grid grid-cols-3 md:grid-cols-6 gap-2">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="flex-1 h-16 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+          <div key={i} className="h-16 bg-slate-200 dark:bg-slate-700 rounded-lg" />
         ))}
       </div>
     );

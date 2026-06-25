@@ -37,7 +37,7 @@ export function DistrictRiskHeatmap({ data, loading }: HeatmapProps) {
           <CardTitle className="text-sm font-medium">District Risk Heatmap</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="animate-pulse grid grid-cols-4 gap-2">
+          <div className="animate-pulse grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[...Array(12)].map((_, i) => (
               <div key={i} className="h-12 bg-slate-200 dark:bg-slate-700 rounded" />
             ))}
@@ -68,7 +68,7 @@ export function DistrictRiskHeatmap({ data, loading }: HeatmapProps) {
             </span>
           ))}
         </div>
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
           {data.map((item) => {
             const sc = getScoreColor(item.riskScore);
             return (

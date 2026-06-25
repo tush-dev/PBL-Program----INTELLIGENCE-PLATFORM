@@ -223,8 +223,8 @@ export default function GrantReportingPage() {
                 options={grants.map((g) => ({ value: g.id, label: `${g.name} (${g.donor})` }))}
                 placeholder="Choose a grant..."
                 searchPlaceholder="Search grant..."
-                triggerClassName="w-64 h-9 text-sm"
-                className="w-64"
+                triggerClassName="w-full sm:w-64 h-9 text-sm"
+                className="w-full sm:w-64"
               />
             </div>
             <div className="space-y-1">
@@ -235,8 +235,8 @@ export default function GrantReportingPage() {
                 options={months.map((m) => ({ value: m, label: m }))}
                 placeholder="Select month..."
                 searchPlaceholder="Search month..."
-                triggerClassName="w-40 h-9 text-sm"
-                className="w-40"
+                triggerClassName="w-full sm:w-40 h-9 text-sm"
+                className="w-full sm:w-40"
               />
             </div>
             {data && (
@@ -384,7 +384,7 @@ export default function GrantReportingPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="bg-slate-50 dark:bg-slate-800/80 rounded-lg p-3 text-center">
                       <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">PBL Completion</p>
                       <p className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-1">{Math.round(perf.pblCompletionRate * 100)}%</p>

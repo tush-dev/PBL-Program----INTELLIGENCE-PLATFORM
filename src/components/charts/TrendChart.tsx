@@ -49,7 +49,8 @@ export function TrendChart({
       </CardHeader>
       <CardContent>
         <div className="min-h-0">
-          <ResponsiveContainer width="100%" height={200}>
+          <div className="h-40 sm:h-48 md:h-[200px]">
+          <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id={`gradient-${title.replace(/\s/g, "")}`} x1="0" y1="0" x2="0" y2="1">
@@ -95,6 +96,7 @@ export function TrendChart({
               />
             </AreaChart>
           </ResponsiveContainer>
+          </div>
         </div>
       </CardContent>
     </Card>
